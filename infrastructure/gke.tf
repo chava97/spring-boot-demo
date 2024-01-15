@@ -1,65 +1,53 @@
-# Copyright (c) HashiCorp, Inc.
-# SPDX-License-Identifier: MPL-2.0
-
-variable "gke_username" {
-  default     = ""
-  description = "gke username"
-}
-
-variable "gke_password" {
-  default     = ""
-  description = "gke password"
-}
-
-variable "gke_num_nodes" {
-  default     = 2
-  description = "number of gke nodes"
-}
-
-# GKE cluster
-data "google_container_engine_versions" "gke_version" {
-  location = var.region
-  version_prefix = "1.27."
-}
-
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_cluster
 resource "google_container_cluster" "primary" {
-  name     = "gke-demo"
-  location = var.region
-
-  # We can't create a cluster with no node pool defined, but we want to only use
-  # separately managed node pools. So we create the smallest possible default
-  # node pool and immediately delete it.
+  name                     = "primary"
+  location                 = "us-central1-a"
   remove_default_node_pool = true
   initial_node_count       = 1
+  network                  = google_compute_network.main.self_link
+  subnetwork               = google_compute_subnetwork.private.self_link
+  logging_service          = "logging.googleapis.com/kubernetes"
+  monitoring_service       = "monitoring.googleapis.com/kubernetes"
+  networking_mode          = "VPC_NATIVE"
 
-  network    = google_compute_network.vpc.name
-  subnetwork = google_compute_subnetwork.subnet.name
-}
+  # Optional, if you want multi-zonal cluster
+  node_locations = [
+    "us-central1-b"
+  ]
 
-# Separately Managed Node Pool
-resource "google_container_node_pool" "primary_nodes" {
-  name       = google_container_cluster.primary.name
-  location   = var.region
-  cluster    = google_container_cluster.primary.name
-  
-  version = data.google_container_engine_versions.gke_version.release_channel_latest_version["STABLE"]
-  node_count = var.gke_num_nodes
-
-  node_config {
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/logging.write",
-      "https://www.googleapis.com/auth/monitoring",
-    ]
-
-    labels = {
-      env = var.project
+  addons_config {
+    http_load_balancing {
+      disabled = true
     }
-
-    # preemptible  = true
-    machine_type = "e2-small"
-    tags         = ["gke-node", "${var.project}-gke"]
-    metadata = {
-      disable-legacy-endpoints = "true"
+    horizontal_pod_autoscaling {
+      disabled = false
     }
   }
+
+  release_channel {
+    channel = "REGULAR"
+  }
+
+  workload_identity_config {
+    workload_pool = "devops-v4.svc.id.goog"
+  }
+
+  ip_allocation_policy {
+    cluster_secondary_range_name  = "k8s-pod-range"
+    services_secondary_range_name = "k8s-service-range"
+  }
+
+  private_cluster_config {
+    enable_private_nodes    = true
+    enable_private_endpoint = false
+    master_ipv4_cidr_block  = "172.16.0.0/28"
+  }
+
+  #   Jenkins use case
+  #   master_authorized_networks_config {
+  #     cidr_blocks {
+  #       cidr_block   = "10.0.0.0/18"
+  #       display_name = "private-subnet-w-jenkins"
+  #     }
+  #   }
 }

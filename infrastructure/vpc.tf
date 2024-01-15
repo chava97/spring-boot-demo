@@ -13,7 +13,7 @@ resource "google_compute_network" "demo" {
     mtu                             = 1460
     delete_default_routes_on_create = false
 
-    dependes_on [
+    dependes_on = [
         google_project_service.compute,
         google_project_service.container
     ]

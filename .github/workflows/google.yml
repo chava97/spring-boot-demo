@@ -43,8 +43,8 @@ jobs:
 
     - name: Docker configuration
       run: |-
-        gcloud auth configure-docker \
-        us-central1-docker.pkg.dev
+        gcloud auth configure-docker --quiet
+        gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
         
     # Get the GKE credentials so we can deploy to the cluster
     - name: Set up GKE credentials

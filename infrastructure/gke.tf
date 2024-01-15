@@ -52,12 +52,12 @@ resource "google_container_node_pool" "primary_nodes" {
     ]
 
     labels = {
-      env = var.project_id
+      env = var.project
     }
 
     # preemptible  = true
     machine_type = "e2-small"
-    tags         = ["gke-node", "${var.project_id}-gke"]
+    tags         = ["gke-node", "${var.project}-gke"]
     metadata = {
       disable-legacy-endpoints = "true"
     }

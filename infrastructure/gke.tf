@@ -1,90 +1,65 @@
-# google_client_config and kubernetes provider must be explicitly specified like the following.
-data "google_client_config" "default" {}
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
 
-provider "kubernetes" {
-  host                   = "https://${module.gke.endpoint}"
-  token                  = data.google_client_config.default.access_token
-  cluster_ca_certificate = base64decode(module.gke.ca_certificate)
+variable "gke_username" {
+  default     = ""
+  description = "gke username"
 }
 
-module "gke" {
-  source                     = "terraform-google-modules/kubernetes-engine/google"
-  project_id                 = var.project
-  name                       = "gke-demo"
-  region                     = var.region
-  zones                      = ["us-central1-a", "us-central1-b", "us-central1-f"]
-  network                    = google_compute_network.demo.name
-  subnetwork                 = google_compute_subnetwork.private.name
-  ip_range_pods              = "k8s-pod-range"
-  ip_range_services          = "k8s-service-range"
-  http_load_balancing        = false
-  network_policy             = false
-  horizontal_pod_autoscaling = true
-  filestore_csi_driver       = false
+variable "gke_password" {
+  default     = ""
+  description = "gke password"
+}
 
-  node_pools = [
-    {
-      name                      = "default-node-pool"
-      machine_type              = "e2-medium"
-      node_locations            = "us-central1-b,us-central1-c"
-      min_count                 = 1
-      max_count                 = 2
-      local_ssd_count           = 0
-      spot                      = false
-      disk_size_gb              = 100
-      disk_type                 = "pd-standard"
-      image_type                = "COS_CONTAINERD"
-      enable_gcfs               = false
-      enable_gvnic              = false
-      logging_variant           = "DEFAULT"
-      auto_repair               = true
-      auto_upgrade              = true
-      service_account           = "tf-gke-gke-demo-p0jh@var.project.iam.gserviceaccount.com"
-      preemptible               = false
-      initial_node_count        = 1
-    },
-  ]
+variable "gke_num_nodes" {
+  default     = 2
+  description = "number of gke nodes"
+}
 
-  node_pools_oauth_scopes = {
-    all = [
+# GKE cluster
+data "google_container_engine_versions" "gke_version" {
+  location = var.region
+  version_prefix = "1.27."
+}
+
+resource "google_container_cluster" "primary" {
+  name     = "gke-demo"
+  location = var.region
+
+  # We can't create a cluster with no node pool defined, but we want to only use
+  # separately managed node pools. So we create the smallest possible default
+  # node pool and immediately delete it.
+  remove_default_node_pool = true
+  initial_node_count       = 1
+
+  network    = google_compute_network.vpc.name
+  subnetwork = google_compute_subnetwork.subnet.name
+}
+
+# Separately Managed Node Pool
+resource "google_container_node_pool" "primary_nodes" {
+  name       = google_container_cluster.primary.name
+  location   = var.region
+  cluster    = google_container_cluster.primary.name
+  
+  version = data.google_container_engine_versions.gke_version.release_channel_latest_version["STABLE"]
+  node_count = var.gke_num_nodes
+
+  node_config {
+    oauth_scopes = [
       "https://www.googleapis.com/auth/logging.write",
       "https://www.googleapis.com/auth/monitoring",
     ]
-  }
 
-  node_pools_labels = {
-    all = {}
-
-    default-node-pool = {
-      default-node-pool = true
+    labels = {
+      env = var.project_id
     }
-  }
 
-  node_pools_metadata = {
-    all = {}
-
-    default-node-pool = {
-      node-pool-metadata-custom-value = "my-node-pool"
+    # preemptible  = true
+    machine_type = "e2-small"
+    tags         = ["gke-node", "${var.project_id}-gke"]
+    metadata = {
+      disable-legacy-endpoints = "true"
     }
-  }
-
-  node_pools_taints = {
-    all = []
-
-    default-node-pool = [
-      {
-        key    = "default-node-pool"
-        value  = true
-        effect = "PREFER_NO_SCHEDULE"
-      },
-    ]
-  }
-
-  node_pools_tags = {
-    all = []
-
-    default-node-pool = [
-      "default-node-pool",
-    ]
   }
 }

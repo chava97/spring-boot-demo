@@ -61,6 +61,12 @@ jobs:
     - name: Build with Maven
       run: mvn -f app/pom.xml clean package
 
+    - name: Debug
+      run: |
+        ls -l
+        ls -l app
+        ls -l app/target
+
     # Build the Docker image
     - name: Build
       run: docker build . --file app/Dockerfile --tag "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:LATEST"

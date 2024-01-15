@@ -8,7 +8,7 @@
 #    service = "container.googleapis.com"
 #}
 
-resource "google_compute_network" "demo" {
+resource "google_compute_network" "vpc" {
     name                            = "demo"
     auto_create_subnetworks         = "false"
 }

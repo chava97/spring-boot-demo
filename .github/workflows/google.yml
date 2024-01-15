@@ -63,7 +63,7 @@ jobs:
 
     # Build the Docker image
     - name: Build
-      run: docker build . --file app/Dockerfile --tag "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:LATEST
+      run: docker build . --file app/Dockerfile --tag "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:LATEST"
 
     # Push the Docker image to Google Artifact Registry
     - name: Publish

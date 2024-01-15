@@ -39,7 +39,7 @@ module "gke" {
       logging_variant           = "DEFAULT"
       auto_repair               = true
       auto_upgrade              = true
-      service_account           = "tf-gke-gke-demo-p0j@var.project.iam.gserviceaccount.com"
+      service_account           = "tf-gke-gke-demo-p0jh@var.project.iam.gserviceaccount.com"
       preemptible               = false
       initial_node_count        = 1
     },

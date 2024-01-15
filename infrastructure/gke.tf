@@ -14,7 +14,7 @@ module "gke" {
   region                     = var.region
   zones                      = ["us-central1-a", "us-central1-b", "us-central1-f"]
   network                    = google_compute_network.demo.name
-  subnetwork                 = var.region
+  subnetwork                 = google_compute_subnetwork.private.name
   ip_range_pods              = "k8s-pod-range"
   ip_range_services          = "k8s-service-range"
   http_load_balancing        = false

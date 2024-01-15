@@ -13,8 +13,8 @@ module "gke" {
   name                       = "gke-demo"
   region                     = var.region
   zones                      = ["us-central1-a", "us-central1-b", "us-central1-f"]
-  network                    = google_compute_network.demo.self_link
-  subnetwork                 = google_compute_subnetwork.private.self_link
+  network                    = google_compute_network.demo.name
+  subnetwork                 = var.region
   ip_range_pods              = "k8s-pod-range"
   ip_range_services          = "k8s-service-range"
   http_load_balancing        = false

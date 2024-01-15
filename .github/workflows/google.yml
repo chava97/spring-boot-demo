@@ -47,7 +47,7 @@ jobs:
         
     # Get the GKE credentials so we can deploy to the cluster
     - name: Set up GKE credentials
-      uses: google-github-actions/get-gke-credentials@v0
+      uses: google-github-actions/get-gke-credentials@v2
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_ZONE }}
@@ -70,6 +70,8 @@ jobs:
     #     curl -sfLo kustomize https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
     #     chmod u+x ./kustomize
     # Deploy the Docker image to the GKE cluster
+    - name: 'get-pods'
+      run: 'kubectl get pods'
     # - name: Deploy
     #   run: |-
     #     # replacing the image name in the k8s template
